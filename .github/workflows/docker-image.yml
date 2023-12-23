@@ -20,6 +20,6 @@ jobs:
         username: jamesmtc
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
     - name: Build the Docker image
-      run: docker buildx build --platform linux/amd64 --file Dockerfile --tag jamesmtc/gin_proxy:${{ steps.date.outputs.date }} .
+      run: docker buildx build --platform linux/amd64 --file Dockerfile --tag jamesmtc/gin_proxy:${{ steps.date.outputs.date }} --tag jamesmtc/gin_proxy:latest .
     - name: Push the Docker image
-      run: docker push jamesmtc/gin_proxy:${{ steps.date.outputs.date }}
+      run: docker push jamesmtc/gin_proxy --all-tags
