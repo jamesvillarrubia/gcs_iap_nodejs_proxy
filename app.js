@@ -8,7 +8,6 @@ const storage = new Storage();
 const bucket = storage.bucket(bucketName);
 
 app.get('/*', function(req, res) {
-    console.log(req.headers)
     let filePath = req.path;
     
     filePath = filePath.replace(/^\/|\/$/g, ''); // remove leading and trailing slashes
