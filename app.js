@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 // Define '__dirname' in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-
 const app = express();
 const bucketName = process.env.BUCKET_NAME;
 
@@ -37,9 +36,22 @@ const getBucketMetadata = async () => {
         logger.error('Error:', err);
         return {
             mainPageSuffix: 'index.html',
-            notFoundPageSuffix: '404.html',
+            notFoundPage: '404.html',
         };
     }
+};
+
+const serveErrorFile = async (res, errorFilePath) => {
+    const errorFile = bucket.file(errorFilePath);
+    const [errorFileExists] = await errorFile.exists();
+    if (!errorFileExists) {
+        logger.error('Error file missing.');
+        res.status(500).end('Internal Server Error');
+        return;
+    }
+
+    const errorStream = errorFile.createReadStream();
+    errorStream.pipe(res);
 };
 
 app.get('/*', async (req, res) => {
@@ -49,50 +61,29 @@ app.get('/*', async (req, res) => {
     const mainPageSuffix = metadata.mainPageSuffix || 'index.html';
     const notFoundPagePath = metadata.notFoundPage || '404.html';
 
-    if (mainPageSuffix && filePath === '') {
-        filePath = mainPageSuffix;
-    }
-
+    filePath = filePath === '' ? mainPageSuffix : filePath;
     const file = bucket.file(filePath);
-    const errorFile = bucket.file(notFoundPagePath);
-    let [errorFileExists] = await errorFile.exists()
-    if(!errorFileExists){
-        logger.error('Error File Missing. ', err);
-        res.status(500).end('Internal Server Error');
+
+    const [fileExists] = await file.exists();
+    if (!fileExists) {
+        res.status(404);
+        await serveErrorFile(res, notFoundPagePath);
         return;
     }
 
+    const remoteReadStream = file.createReadStream();
 
-    const [fileExists] = await file.exists()
+    remoteReadStream.on('error', async () => {
+        res.status(404);
+        await serveErrorFile(res, notFoundPagePath);
+    });
 
-    if(!fileExists){
-        res.status(404)
-        const errorStream = errorFile.createReadStream();
-        errorStream.pipe(res)
-        return;
-    }else{
-        const remoteReadStream = file.createReadStream();
+    remoteReadStream.on('response', (response) => {
+        res.set('Content-Type', response.headers['content-type']);
+        res.set('Cache-Control', 'public, max-age=3600');
+    });
 
-        remoteReadStream.on('error', err => {
-            res.status(404)
-            const errorStream = errorFile.createReadStream();
-            errorStream.pipe(res)
-            return;
-        });
-    
-        remoteReadStream.on('response', response => {
-            res.set('Content-Type', response.headers['content-type']);
-            res.set('Cache-Control', 'public, max-age=3600');
-        });
-    
-        remoteReadStream.on('end', () => {
-            res.end();
-        });
-    
-        remoteReadStream.pipe(res);
-    }
-
-  
+    remoteReadStream.pipe(res);
 });
 
 const port = process.env.PROXY_PORT || 3000;
