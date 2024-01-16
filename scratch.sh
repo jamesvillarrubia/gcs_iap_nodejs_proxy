@@ -4,7 +4,7 @@
 export PROJECT_ID=madi-1220
 
 # # Build the Docker image
-docker buildx build --platform linux/amd64 -t gcr.io/${PROJECT_ID}/madi-1220-gcs-proxy .
+docker buildx build --platform linux/amd64 -t jamesmtc/gin_proxy:latest .
 
 # Push the Docker image to Google Container Registry
 docker push gcr.io/${PROJECT_ID}/madi-1220-gcs-proxy
