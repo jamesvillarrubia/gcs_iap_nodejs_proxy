@@ -9,11 +9,15 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+console.log(process.env);
 const bucketName = process.env.BUCKET_NAME;
 
-const storage = new Storage({
-    apiEndpoint: process.env.BUCKET_HOST || 'https://storage.googleapis.com',
-});
+// const storage = new Storage(
+//     {
+//     apiEndpoint: process.env.BUCKET_HOST || 'https://storage.googleapis.com',
+// }
+// );
+const storage = new Storage();
 
 const bucket = storage.bucket(bucketName);
 
