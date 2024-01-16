@@ -1,15 +1,36 @@
 {
   "name": "gcs_proxy",
   "version": "1.0.0",
-  "description": "",
+  "description": "A proxy server for serving files from Google Cloud Storage",
   "main": "app.js",
+  "type": "module", 
   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "name": "James Villarrubia",
+    "email": "james.villarrubia@gmail.com"
+  },
+  "license": "MIT",
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
-    "express": "^4.18.2"
-  }
+    "compression": "^1.7.4",
+    "express": "^4.18.2",
+    "winston": "^3.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jamesvillarrubia/gcs_proxy.git"
+  },
+  "keywords": [
+    "google cloud storage",
+    "proxy server",
+    "file serving"
+  ],
+  "bugs": {
+    "url": "https://github.com/jamesvillarrubia/gcs_proxy/issues"
+  },
+  "homepage": "https://github.com/jamesvillarrubia/gcs_proxy#readme"
 }

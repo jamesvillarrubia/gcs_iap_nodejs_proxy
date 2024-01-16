@@ -1,69 +1,101 @@
-const express = require('express');
-const { Storage } = require('@google-cloud/storage');
-const compression = require('compression');
-const winston = require('winston');
+import express from 'express';
+import { Storage } from '@google-cloud/storage';
+import compression from 'compression';
+import winston from 'winston';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Define '__dirname' in ES module scope
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 
 const app = express();
-const bucketName = process.env.BUCKET_NAME; // fetch from env variable
+const bucketName = process.env.BUCKET_NAME;
 
-const storage = new Storage();
+const storage = new Storage({
+    apiEndpoint: process.env.BUCKET_HOST || 'https://storage.googleapis.com',
+});
+
 const bucket = storage.bucket(bucketName);
 
-// Configure logging
 const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-  ],
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    ],
 });
 
-// Enable compression
 app.use(compression());
 
-app.get('/*', function (req, res) {
-  let filePath = req.path;
-
-  filePath = filePath.replace(/^\/|\/$/g, ''); // remove leading and trailing slashes
-
-  // Check if the requested file matches the mainPageSuffix or notFoundPageSuffix of the bucket
-  bucket.getMetadata(function (err, metadata, apiResponse) {
-    if (err) {
-      logger.error('Error:', err);
-      res.status(500).send('Internal Server Error');
-      return;
+const getBucketMetadata = async () => {
+    try {
+        const [metadata] = await bucket.getMetadata();
+        return metadata;
+    } catch (err) {
+        logger.error('Error:', err);
+        return {
+            mainPageSuffix: 'index.html',
+            notFoundPageSuffix: '404.html',
+        };
     }
+};
 
-    const mainPageSuffix = metadata && metadata.mainPageSuffix;
-    const notFoundPageSuffix = metadata && metadata.notFoundPageSuffix;
+app.get('/*', async (req, res) => {
+    let filePath = req.path.replace(/^\/|\/$/g, '');
+
+    const metadata = await getBucketMetadata();
+    const mainPageSuffix = metadata.mainPageSuffix || 'index.html';
+    const notFoundPagePath = metadata.notFoundPage || '404.html';
 
     if (mainPageSuffix && filePath === '') {
-      filePath = mainPageSuffix;
+        filePath = mainPageSuffix;
     }
 
-    // Use the requested file
-    let remoteReadStream = bucket.file(filePath).createReadStream();
+    const file = bucket.file(filePath);
+    const errorFile = bucket.file(notFoundPagePath);
+    let [errorFileExists] = await errorFile.exists()
+    if(!errorFileExists){
+        logger.error('Error File Missing. ', err);
+        res.status(500).end('Internal Server Error');
+        return;
+    }
 
-    remoteReadStream.on('error', function (err) {
-      logger.error('Error:', err);
-      res.status(404).sendFile(notFoundPageSuffix);
-    });
 
-    remoteReadStream.on('response', function (response) {
-      // Only forward the headers we wish to.
-      res.set('Content-Type', response.headers['content-type']);
-      res.set('Cache-Control', 'public, max-age=3600'); // Example caching header
-    });
+    const [fileExists] = await file.exists()
 
-    remoteReadStream.on('end', function () {
-      res.end();
-    });
+    if(!fileExists){
+        res.status(404)
+        const errorStream = errorFile.createReadStream();
+        errorStream.pipe(res)
+        return;
+    }else{
+        const remoteReadStream = file.createReadStream();
 
-    remoteReadStream.pipe(res);
-  });
+        remoteReadStream.on('error', err => {
+            res.status(404)
+            const errorStream = errorFile.createReadStream();
+            errorStream.pipe(res)
+            return;
+        });
+    
+        remoteReadStream.on('response', response => {
+            res.set('Content-Type', response.headers['content-type']);
+            res.set('Cache-Control', 'public, max-age=3600');
+        });
+    
+        remoteReadStream.on('end', () => {
+            res.end();
+        });
+    
+        remoteReadStream.pipe(res);
+    }
+
+  
 });
 
-app.listen(process.env.PROXY_PORT || 3000, function () {
-  logger.info('App listening on port 3000, serving files from Google Cloud Storage bucket: ' + bucketName);
+const port = process.env.PROXY_PORT || 3000;
+app.listen(port, () => {
+    logger.info(`App listening on port ${port}, serving files from Google Cloud Storage bucket: ${bucketName}`);
 });

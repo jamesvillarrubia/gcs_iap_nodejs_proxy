@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - BUCKET_NAME=bucket
+      - BUCKET_HOST=http://fake-gcs-server:4443
+    volumes:
+      - ./app.js:/app/app.js
+      - ./error.log:/app/error.log
+
+  fake-gcs-server:
+    image: fsouza/fake-gcs-server
+    command: "-scheme http"
+    ports:
+      - "4443:4443"
+    volumes:
+      - "${PWD}/dist:/data/bucket"
