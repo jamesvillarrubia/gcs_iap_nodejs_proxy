@@ -83,6 +83,23 @@ app.get('/*', async (req, res) => {
         res.set('Cache-Control', 'public, max-age=3600');
     });
 
+    // Forward GCS Identity Aware Proxy (IAP) credentials and headers
+    const forwardedHeaders = {};
+    if (req.headers['x-goog-authenticated-user-email']) {
+        forwardedHeaders['x-goog-authenticated-user-email'] = req.headers['x-goog-authenticated-user-email'];
+    }
+    if (req.headers['x-goog-authenticated-user-id']) {
+        forwardedHeaders['x-goog-authenticated-user-id'] = req.headers['x-goog-authenticated-user-id'];
+    }
+    if (req.headers['x-goog-iap-jwt-assertion']) {
+        forwardedHeaders['x-goog-iap-jwt-assertion'] = req.headers['x-goog-iap-jwt-assertion'];
+    }
+    if (Object.keys(forwardedHeaders).length > 0) {
+        remoteReadStream.on('request', (requestOptions) => {
+            requestOptions.headers = { ...requestOptions.headers, ...forwardedHeaders };
+        });
+    }
+
     remoteReadStream.pipe(res);
 });
 
