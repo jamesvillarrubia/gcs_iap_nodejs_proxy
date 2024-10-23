@@ -68,9 +68,17 @@ app.get('/*', async (req, res) => {
     const notFoundPagePath = metadata.notFoundPage || '404.html';
 
     filePath = filePath === '' ? mainPageSuffix : filePath;
-    const file = bucket.file(filePath);
 
-    const [fileExists] = await file.exists();
+    // Check for the file with '.html' extension
+    let file = bucket.file(filePath + '.html');
+    let [fileExists] = await file.exists();
+
+    if (!fileExists) {
+        // If the file with '.html' extension doesn't exist, check for the file without the extension
+        file = bucket.file(filePath);
+        [fileExists] = await file.exists();
+    }
+
     if (!fileExists) {
         res.status(404);
         await serveErrorFile(res, notFoundPagePath);

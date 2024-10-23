@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -10,9 +8,9 @@ services:
     environment:
       - BUCKET_NAME=bucket
       - BUCKET_HOST=http://fake-gcs-server:4443
-    volumes:
-      - ./app.js:/app/app.js
-      - ./error.log:/app/error.log
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/test/credentials.json
+    depends_on:
+      - fake-gcs-server
 
   fake-gcs-server:
     image: fsouza/fake-gcs-server
@@ -20,4 +18,17 @@ services:
     ports:
       - "4443:4443"
     volumes:
-      - "${PWD}/dist:/data/bucket"
+      - "${PWD}/test/dist:/data/bucket"
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - BUCKET_NAME=bucket
+      - BUCKET_HOST=http://fake-gcs-server:4443
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/test/credentials.json
+    command: npm test
+    depends_on:
+      - app
+      - fake-gcs-server

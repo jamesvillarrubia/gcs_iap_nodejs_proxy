@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "A proxy server for serving files from Google Cloud Storage",
   "main": "app.js",
-  "type": "module", 
+  "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./src/app.js",
+    "dev": "nodemon ./src/app.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js ./test/app.test.js"
   },
   "author": {
     "name": "James Villarrubia",
@@ -17,8 +17,15 @@
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
     "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
-    "winston": "^3.3.3"
+    "express-cache-control": "^1.0.2",
+    "express-cache-controller": "^1.1.0",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "route-cache": "^0.7.0",
+    "winston": "^3.15.0"
   },
   "repository": {
     "type": "git",
@@ -32,5 +39,9 @@
   "bugs": {
     "url": "https://github.com/jamesvillarrubia/gcs_proxy/issues"
   },
-  "homepage": "https://github.com/jamesvillarrubia/gcs_proxy#readme"
+  "homepage": "https://github.com/jamesvillarrubia/gcs_proxy#readme",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
 }
