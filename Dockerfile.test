@@ -12,11 +12,11 @@ FROM node:20.2.0-alpine
 ENV PROXY_PORT=3000
 ENV BUCKET_HOST=https://storage.googleapis.com
 ENV BUCKET_NAME=your-bucket-name
-ENV RATE_LIMIT_ENABLED=true
+ENV RATE_LIMIT_ENABLED=false
 ENV RATE_LIMIT_WINDOW_MS=900000
 ENV RATE_LIMIT_MAX=100
 ENV CACHE_DURATION=20000
-ENV CACHE_ENABLED=true
+ENV CACHE_ENABLED=false
 
 # Specify the working directory in the Docker image
 WORKDIR /app
