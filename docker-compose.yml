@@ -9,6 +9,7 @@ services:
       - BUCKET_NAME=bucket
       - BUCKET_HOST=http://fake-gcs-server:4443
       - GOOGLE_APPLICATION_CREDENTIALS=/app/test/credentials.json
+      - NODE_ENV=test
     depends_on:
       - fake-gcs-server
 
@@ -28,7 +29,7 @@ services:
       - BUCKET_NAME=bucket
       - BUCKET_HOST=http://fake-gcs-server:4443
       - GOOGLE_APPLICATION_CREDENTIALS=/app/test/credentials.json
+      - NODE_ENV=test
     command: npm test
     depends_on:
-      - app
       - fake-gcs-server

@@ -16,10 +16,17 @@ const app = express();
 app.set('trust proxy', true);
 
 
-const bucketHost = process.env.BUCKET_HOST || 'https://storage.googleapis.com';
-const storage = new Storage({apiEndpoint: bucketHost});
+let storage;
+let bucket;
 
-const bucket = storage.bucket(process.env.BUCKET_NAME, { baseUrl: bucketHost });
+if (process.env.NODE_ENV === 'test') {
+    const bucketHost = process.env.BUCKET_HOST || 'https://storage.googleapis.com';
+    storage = new Storage({ apiEndpoint: bucketHost });
+    bucket = storage.bucket(process.env.BUCKET_NAME, { baseUrl: bucketHost });
+} else {
+    storage = new Storage();
+    bucket = storage.bucket(process.env.BUCKET_NAME);
+}
 
 const notFoundPagePath = '404.html';
 
@@ -37,7 +44,7 @@ const logger = winston.createLogger({
 });
 
 
-app.
+
 const forwardHeaders = (req, readStream) => {
     const forwardedHeaders = {};
     if (req.headers['x-goog-authenticated-user-email']) {
