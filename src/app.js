@@ -12,8 +12,13 @@ dotenv.config();
 
 const app = express();
 
+// Add this line to enable the trust proxy setting
+app.set('trust proxy', true);
+
+
 const bucketHost = process.env.BUCKET_HOST || 'https://storage.googleapis.com';
 const storage = new Storage({apiEndpoint: bucketHost});
+
 const bucket = storage.bucket(process.env.BUCKET_NAME, { baseUrl: bucketHost });
 
 const notFoundPagePath = '404.html';
@@ -31,6 +36,8 @@ const logger = winston.createLogger({
     ]
 });
 
+
+app.
 const forwardHeaders = (req, readStream) => {
     const forwardedHeaders = {};
     if (req.headers['x-goog-authenticated-user-email']) {
