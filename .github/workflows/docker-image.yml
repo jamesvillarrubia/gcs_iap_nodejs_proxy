@@ -14,9 +14,9 @@ jobs:
     
     - name: Run tests with Docker Compose
       run: |
-        docker-compose -f docker-compose.yml up --build -d
-        docker-compose -f docker-compose.yml run --rm tests
-        docker-compose -f docker-compose.yml down
+        docker compose -f docker-compose.yml up --build -d
+        docker compose -f docker-compose.yml run --rm tests
+        docker compose -f docker-compose.yml down
     
     - name: Get the current date
       id: date
