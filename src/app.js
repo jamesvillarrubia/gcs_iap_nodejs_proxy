@@ -134,37 +134,52 @@ if (process.env.CACHE_ENABLED === 'true') {
 app.use(cors());
 
 app.get('/*', async (req, res) => {
-    const filePath = req.path.replace(/^\/|\/$/g, '');
+    let filePath = req.path.replace(/^\/|\/$/g, '');
+
+    if (filePath === '') {
+        filePath = 'index.html';
+    }
 
     logger.info(`Requested file: ${filePath}`);
 
-    let file;
-    if (filePath === '') {
-        // Use index.html for the root path
-        file = bucket.file('index.html');
+    const serveResult = await serveFileWithFallback(filePath, req, res);
+
+    if (serveResult.served) {
+        logger.info(`Served file: ${serveResult.filePath}`);
     } else {
-        file = bucket.file(filePath);
-    }
-
-    const served = await serveFile(file, req, res);
-
-    if (!served) {
-        // Serve the 404.html file if the requested file doesn't exist
-        const notFoundFile = bucket.file(notFoundPagePath);
-        const notFoundServed = await serveFile(notFoundFile, req, res);
-
-        if (notFoundServed) {
-            logger.info(`Served 404.html for file: ${filePath}`);
-            res.status(404);
-        } else {
-            logger.warn(`File not found: ${filePath}`);
-            res.status(404).send('File not found');
-        }
-    } else {
-        logger.info(`Served file: ${filePath || 'index.html'}`);
+        logger.warn(`File not found: ${filePath}`);
+        res.status(404).send('File not found');
     }
 });
 
+async function serveFileWithFallback(filePath, req, res) {
+    const file = bucket.file(filePath);
+    const served = await serveFile(file, req, res);
+
+    if (served) {
+        return { served: true, filePath };
+    }
+
+    if (!filePath.endsWith('.html')) {
+        const htmlFilePath = `${filePath}.html`;
+        const htmlFile = bucket.file(htmlFilePath);
+        const htmlServed = await serveFile(htmlFile, req, res);
+
+        if (htmlServed) {
+            return { served: true, filePath: htmlFilePath };
+        }
+    }
+
+    const notFoundFile = bucket.file(notFoundPagePath);
+    const notFoundServed = await serveFile(notFoundFile, req, res);
+
+    if (notFoundServed) {
+        res.status(404);
+        return { served: true, filePath: notFoundPagePath };
+    }
+
+    return { served: false, filePath };
+}
 
 const port = process.env.PROXY_PORT || 3000;
 const server = app.listen(port, () => {
