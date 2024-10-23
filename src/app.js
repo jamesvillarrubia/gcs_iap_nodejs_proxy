@@ -179,5 +179,6 @@ function gracefulShutdown() {
     }, 5000); // Adjust the timeout value as needed
 }
 
+console.log(JSON.stringify(process.env,null,2));
 
 export default server;
