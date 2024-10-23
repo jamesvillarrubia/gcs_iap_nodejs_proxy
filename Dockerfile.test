@@ -1,13 +1,10 @@
 # Build stage
-FROM node:20.2.0-alpine AS build
+FROM node:22.10-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
-
-
-
+RUN npm ci
 
 # Runtime stage
 FROM node:20.2.0-alpine
@@ -20,7 +17,6 @@ ENV RATE_LIMIT_WINDOW_MS=900000
 ENV RATE_LIMIT_MAX=100
 ENV CACHE_DURATION=20000
 ENV CACHE_ENABLED=false
-
 
 # Specify the working directory in the Docker image
 WORKDIR /app
@@ -35,4 +31,4 @@ USER appuser
 EXPOSE $PROXY_PORT
 
 # Start the express server
-CMD [ "npm", "start" ]
+CMD ["npm", "start"]
