@@ -102,8 +102,19 @@ const serveFile = async (file, req, res) => {
 app.use(compression());
 
 // Add security headers
-app.use(helmet());
-
+app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      // Other security headers can still be enabled
+      dnsPrefetchControl: true,
+      frameguard: true,
+      hidePoweredBy: true,
+      hsts: true,
+      ieNoOpen: true,
+      noSniff: true,
+      xssFilter: true,
+    })
+  );
 // Implement rate limiting
 if (process.env.RATE_LIMIT_ENABLED === 'true') {
     const limiter = rateLimit({
