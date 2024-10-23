@@ -113,18 +113,14 @@ app.get('/*', async (req, res) => {
 
     logger.info(`Requested file: ${filePath}`);
 
+    let file;
     if (filePath === '') {
-        // Serve the index.html file for the root path
-        const indexFile = bucket.file('index.html');
-        const served = await serveFile(indexFile, req, res);
-
-        if (served) {
-            logger.info('Served index.html');
-            return;
-        }
+        // Use index.html for the root path
+        file = bucket.file('index.html');
+    } else {
+        file = bucket.file(filePath);
     }
 
-    const file = bucket.file(filePath);
     const served = await serveFile(file, req, res);
 
     if (!served) {
@@ -140,9 +136,10 @@ app.get('/*', async (req, res) => {
             res.status(404).send('File not found');
         }
     } else {
-        logger.info(`Served file: ${filePath}`);
+        logger.info(`Served file: ${filePath || 'index.html'}`);
     }
 });
+
 
 const port = process.env.PROXY_PORT || 3000;
 const server = app.listen(port, () => {
